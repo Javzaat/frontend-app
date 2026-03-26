@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Page</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Profile Page</h1>
+
+        <label for="id">ID (Update/Delete үед):</label>
+        <input type="number" id="id" placeholder="Enter user id">
+
+        <label for="name">Name:</label>
+        <input type="text" id="name" placeholder="Enter name">
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" placeholder="Enter email">
+
+        <label for="bio">Bio:</label>
+        <input type="text" id="bio" placeholder="Enter bio">
+
+        <label for="phone">Phone:</label>
+        <input type="text" id="phone" placeholder="Enter phone">
+
+        <label for="file">Profile Image:</label>
+        <input type="file" id="file">
+
+        <div class="actions">
+            <button type="button" onclick="uploadImage()">Upload Image</button>
+        </div>
+
+        <div class="actions">
+            <button type="button" onclick="createProfile()">Create</button>
+            <button type="button" onclick="updateProfile()">Update</button>
+            <button type="button" onclick="deleteProfile()">Delete</button>
+            <button type="button" onclick="loadProfiles()">Load</button>
+            <button type="button" class="secondary-btn" onclick="logout()">Logout</button>
+        </div>
+
+        <p id="message" class="message"></p>
+        <pre id="profiles"></pre>
+    </div>
+
+    <script>
+        let uploadedImageUrl = localStorage.getItem("uploadedImageUrl") || "";
+
+        function getToken() {
+            return localStorage.getItem("token");
+        }
+
+        function saveFormState() {
+            localStorage.setItem("profile_id", document.getElementById("id").value);
+            localStorage.setItem("profile_name", document.getElementById("name").value);
+            localStorage.setItem("profile_email", document.getElementById("email").value);
+            localStorage.setItem("profile_bio", document.getElementById("bio").value);
+            localStorage.setItem("profile_phone", document.getElementById("phone").value);
+        }
+
+        function restoreFormState() {
+            document.getElementById("id").value = localStorage.getItem("profile_id") || "";
+            document.getElementById("name").value = localStorage.getItem("profile_name") || "";
+            document.getElementById("email").value = localStorage.getItem("profile_email") || "";
+            document.getElementById("bio").value = localStorage.getItem("profile_bio") || "";
+            document.getElementById("phone").value = localStorage.getItem("profile_phone") || "";
+
+            if (uploadedImageUrl) {
+                document.getElementById("message").innerText =
+                    "Өмнө upload хийсэн зураг хадгалагдсан байна. Одоо Create эсвэл Update дарна уу.";
+            }
+        }
+
+        function getProfileData() {
+            return {
+                name: document.getElementById("name").value.trim(),
+                email: document.getElementById("email").value.trim(),
+                bio: document.getElementById("bio").value.trim(),
+                phone: document.getElementById("phone").value.trim(),
+                imageUrl: uploadedImageUrl
+            };
+        }
+
+        function clearInputs() {
+            document.getElementById("id").value = "";
+            document.getElementById("name").value = "";
+            document.getElementById("email").value = "";
+            document.getElementById("bio").value = "";
+            document.getElementById("phone").value = "";
+            document.getElementById("file").value = "";
+
+            uploadedImageUrl = "";
+
+            localStorage.removeItem("uploadedImageUrl");
+            localStorage.removeItem("profile_id");
+            localStorage.removeItem("profile_name");
+            localStorage.removeItem("profile_email");
+            localStorage.removeItem("profile_bio");
+            localStorage.removeItem("profile_phone");
+        }
+
+        function validateProfileData(data) {
+            return data.name && data.email && data.bio && data.phone;
+        }
+
+        async function createProfile() {
+            const token = getToken();
+            const message = document.getElementById("message");
+            const profileData = getProfileData();
+
+            if (!token) {
+                message.innerText = "Token байхгүй байна. Эхлээд login хийнэ үү.";
+                return;
+            }
+
+            if (!validateProfileData(profileData)) {
+                message.innerText = "Бүх талбарыг бөглөнө үү.";
+                return;
+            }
+
+            try {
+                const response = await fetch("http://localhost:8080/users", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(profileData)
+                });
+
+                const text = await response.text();
+
+                if (!response.ok) {
+                    message.innerText = "Create алдаа: " + text;
+                    return;
+                }
+
+                message.innerText = "Profile амжилттай үүслээ.";
+                clearInputs();
+                loadProfiles();
+            } catch (error) {
+                console.error(error);
+                message.innerText = "Create хийх үед алдаа гарлаа.";
+            }
+        }
+
+        async function updateProfile() {
+            const token = getToken();
+            const id = document.getElementById("id").value.trim();
+            const message = document.getElementById("message");
+            const profileData = getProfileData();
+
+            if (!token) {
+                message.innerText = "Token байхгүй байна. Эхлээд login хийнэ үү.";
+                return;
+            }
+
+            if (!id) {
+                message.innerText = "Update хийхийн тулд ID оруулна уу.";
+                return;
+            }
+
+            if (!validateProfileData(profileData)) {
+                message.innerText = "Update хийхийн тулд бүх талбарыг бөглөнө үү.";
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8080/users/${id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": "Bearer " + token,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(profileData)
+                });
+
+                const text = await response.text();
+
+                if (!response.ok) {
+                    message.innerText = "Update алдаа: " + text;
+                    return;
+                }
+
+                message.innerText = "Profile амжилттай шинэчлэгдлээ.";
+                clearInputs();
+                loadProfiles();
+            } catch (error) {
+                console.error(error);
+                message.innerText = "Update хийх үед алдаа гарлаа.";
+            }
+        }
+
+        async function deleteProfile() {
+            const token = getToken();
+            const id = document.getElementById("id").value.trim();
+            const message = document.getElementById("message");
+
+            if (!token) {
+                message.innerText = "Token байхгүй байна. Эхлээд login хийнэ үү.";
+                return;
+            }
+
+            if (!id) {
+                message.innerText = "Delete хийхийн тулд ID оруулна уу.";
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8080/users/${id}`, {
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    }
+                });
+
+                const text = await response.text();
+
+                if (!response.ok) {
+                    message.innerText = "Delete алдаа: " + text;
+                    return;
+                }
+
+                message.innerText = text;
+                clearInputs();
+                loadProfiles();
+            } catch (error) {
+                console.error(error);
+                message.innerText = "Delete хийх үед алдаа гарлаа.";
+            }
+        }
+
+        async function loadProfiles() {
+            const token = getToken();
+            const profiles = document.getElementById("profiles");
+            const message = document.getElementById("message");
+
+            if (!token) {
+                message.innerText = "Token байхгүй байна. Эхлээд login хийнэ үү.";
+                return;
+            }
+
+            try {
+                const response = await fetch("http://localhost:8080/users", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    }
+                });
+
+                const text = await response.text();
+
+                if (!response.ok) {
+                    profiles.innerText = "Алдаа: " + text;
+                    return;
+                }
+
+                try {
+                    const data = JSON.parse(text);
+                    profiles.innerText = JSON.stringify(data, null, 2);
+                } catch (e) {
+                    profiles.innerText = text;
+                }
+            } catch (error) {
+                console.error(error);
+                profiles.innerText = "Profile ачаалах үед алдаа гарлаа.";
+            }
+        }
+
+        async function uploadImage() {
+            const token = getToken();
+            const fileInput = document.getElementById("file");
+            const message = document.getElementById("message");
+
+            saveFormState();
+
+            if (!token) {
+                message.innerText = "Token байхгүй байна. Эхлээд login хийнэ үү.";
+                return;
+            }
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                message.innerText = "Upload хийх зураг сонгоно уу.";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+
+            try {
+                const response = await fetch("http://localhost:8082/files/upload", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    body: formData
+                });
+
+                const text = await response.text();
+
+                if (!response.ok) {
+                    message.innerText = "Image upload алдаа: " + text;
+                    return;
+                }
+
+                uploadedImageUrl = text;
+                localStorage.setItem("uploadedImageUrl", uploadedImageUrl);
+
+                message.innerText = "Зураг амжилттай upload хийгдлээ. Одоо Create эсвэл Update дарна уу.";
+            } catch (error) {
+                console.error(error);
+                message.innerText = "Image upload хийх үед алдаа гарлаа.";
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            clearInputs();
+            window.location.href = "login.html";
+        }
+
+        document.getElementById("id").addEventListener("input", saveFormState);
+        document.getElementById("name").addEventListener("input", saveFormState);
+        document.getElementById("email").addEventListener("input", saveFormState);
+        document.getElementById("bio").addEventListener("input", saveFormState);
+        document.getElementById("phone").addEventListener("input", saveFormState);
+
+        restoreFormState();
+    </script>
+</body>
+</html>

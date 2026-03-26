@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Page</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Register Page</h1>
+
+        <label for="username">Username:</label>
+        <input type="text" id="username" placeholder="Enter username">
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" placeholder="Enter password">
+
+        <button onclick="registerUser()">Register</button>
+
+        <p id="result" class="message"></p>
+
+        <a href="login.html">Go to Login</a>
+    </div>
+
+    <script>
+        async function registerUser() {
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const result = document.getElementById("result");
+
+            if (!username || !password) {
+                result.innerText = "Username болон password оруулна уу.";
+                return;
+            }
+
+            const soapRequest = `
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                    xmlns:aut="http://example.com/authsoap">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <aut:RegisterUserRequest>
+            <aut:username>${username}</aut:username>
+            <aut:password>${password}</aut:password>
+        </aut:RegisterUserRequest>
+    </soapenv:Body>
+    </soapenv:Envelope>`;
+
+            try {
+                const response = await fetch("http://localhost:8081/ws", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/xml"
+                    },
+                    body: soapRequest
+                });
+
+                const text = await response.text();
+
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(text, "text/xml");
+                const messageElement =
+                    xml.getElementsByTagName("ns2:message")[0] ||
+                    xml.getElementsByTagName("message")[0];
+
+                const message = messageElement ? messageElement.textContent.trim() : "Registration failed";
+                result.innerText = message;
+
+            } catch (error) {
+                console.error(error);
+                result.innerText = "Register хийх үед алдаа гарлаа.";
+            }
+        }
+    </script>
+</body>
+</html>
