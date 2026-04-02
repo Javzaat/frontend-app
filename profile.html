@@ -120,7 +120,7 @@
             }
 
             try {
-                const response = await fetch("http://localhost:8080/users", {
+                const response = await fetch("https://user-json-service-s9oyc.ondigitalocean.app/users", {
                     method: "POST",
                     headers: {
                         "Authorization": "Bearer " + token,
@@ -167,7 +167,7 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:8080/users/${id}`, {
+                const response = await fetch(`https://user-json-service-s9oyc.ondigitalocean.app/users/${id}`, {
                     method: "PUT",
                     headers: {
                         "Authorization": "Bearer " + token,
@@ -208,7 +208,7 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:8080/users/${id}`, {
+                const response = await fetch(`https://user-json-service-s9oyc.ondigitalocean.app/users/${id}`, {
                     method: "DELETE",
                     headers: {
                         "Authorization": "Bearer " + token
@@ -242,7 +242,7 @@
             }
 
             try {
-                const response = await fetch("http://localhost:8080/users", {
+                const response = await fetch("https://user-json-service-s9oyc.ondigitalocean.app/users", {
                     method: "GET",
                     headers: {
                         "Authorization": "Bearer " + token
@@ -289,7 +289,7 @@
             formData.append("file", fileInput.files[0]);
 
             try {
-                const response = await fetch("http://localhost:8082/files/upload", {
+                const response = await fetch("https://file-manager-service-v3p9m.ondigitalocean.app/files/upload", {
                     method: "POST",
                     headers: {
                         "Authorization": "Bearer " + token
